@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 namespace CryptoGuard {
+namespace po = boost::program_options;
 
 class ProgramOptions {
 public:
@@ -17,7 +18,7 @@ public:
         CHECKSUM,
     };
 
-    void Parse(int argc, char *argv[]);
+    bool Parse(int argc, char *argv[]);
 
     COMMAND_TYPE GetCommand() const { return command_; }
     std::string GetInputFile() const { return inputFile_; }
@@ -36,7 +37,8 @@ private:
     std::string outputFile_;
     std::string password_;
 
-    boost::program_options::options_description desc_;
+    po::options_description desc_;
+    po::variables_map vm_;
 };
 
 }  // namespace CryptoGuard

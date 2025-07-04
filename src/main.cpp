@@ -36,6 +36,9 @@ AesCipherParams CreateChiperParamsFromPassword(std::string_view password) {
 int main(int argc, char *argv[]) {
     try {
         CryptoGuard::ProgramOptions options;
+        if (!options.Parse(argc, argv)) {
+            return 0;
+        }
 
         CryptoGuard::CryptoGuardCtx cryptoCtx;
 

@@ -1,4 +1,5 @@
 #include "cmd_options.h"
+#include <iostream>
 
 namespace CryptoGuard {
 namespace po = boost::program_options;
@@ -15,6 +16,20 @@ ProgramOptions::ProgramOptions() : desc_("Allowed options") {
 
 ProgramOptions::~ProgramOptions() = default;
 
-void ProgramOptions::Parse(int argc, char *argv[]) {}
+bool ProgramOptions::Parse(int argc, char *argv[]) {
+    
+    po::store(po::parse_command_line(argc, argv, desc_), vm_);
+
+    try {
+        po::notify(vm_);
+    } catch (const po::required_option &e) {
+        if (vm_.count("help") > 0) {
+            std::cout << desc_ << "\n";
+            return false;
+        }
+        throw;
+    }
+    return true;
+}
 
 }  // namespace CryptoGuard
