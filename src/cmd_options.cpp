@@ -9,7 +9,7 @@ namespace po = boost::program_options;
 ProgramOptions::ProgramOptions() : desc_("Allowed options") {
     desc_.add_options()                                                                         //
         ("help,h", "список доступных опций")                                                    //
-        ("command,c", po::value<ProgramOptions::COMMAND_TYPE>()->required(),                    //
+        ("command,c", po::value<ProgramOptions::COMMAND_TYPE>(&command_)->required(),                    //
          "команда encrypt, decrypt или checksum")                                               //
         ("input,i", po::value<std::string>(&inputFile_)->required(), "путь до входного файла")  //
         ("output,o", po::value<std::string>(&outputFile_)->required(),                          //
