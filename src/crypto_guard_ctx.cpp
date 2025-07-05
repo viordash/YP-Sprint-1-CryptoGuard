@@ -61,7 +61,10 @@ public:
         params.encrypt = 1;
 
         // Инициализируем cipher
-        EVP_CipherInit_ex(ctx.get(), params.cipher, nullptr, params.key.data(), params.iv.data(), params.encrypt);
+        if (!EVP_CipherInit_ex(ctx.get(), params.cipher, nullptr, params.key.data(), params.iv.data(),
+                               params.encrypt)) {
+            throw std::runtime_error("EVP_CipherInit_ex error:" + std::to_string(ERR_get_error()));
+        }
 
         std::vector<unsigned char> inBuf(16);
         std::vector<unsigned char> outBuf(inBuf.size() + EVP_MAX_BLOCK_LENGTH);
