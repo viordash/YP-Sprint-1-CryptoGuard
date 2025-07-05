@@ -216,6 +216,14 @@ TEST(CryptoGuardCtx, ChecksumCalculation) {
     EXPECT_EQ(checksum, "4e76ad8354461437c04ef9b9b242540b6406d782ff2c3fb28afdab5b423f88fe");
 }
 
+TEST(CryptoGuardCtx, ChecksumCalculation_for_long_string) {
+    CryptoGuardCtx testable;
+    std::stringstream inStream(CreateFixedString(1000));
+
+    auto checksum = testable.CalculateChecksum(inStream);
+    EXPECT_EQ(checksum, "856fc5d1201b902510c46d5cc5f3005a117d7d3b856ac3c4dbbc3370b1b99937");
+}
+
 TEST(CryptoGuardCtx, ChecksumCalculation_for_empty_data) {
     CryptoGuardCtx testable;
     std::stringstream inStream;
