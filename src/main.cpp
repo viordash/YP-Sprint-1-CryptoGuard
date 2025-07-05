@@ -1,13 +1,11 @@
 #include "cmd_options.h"
 #include "crypto_guard_ctx.h"
 #include "handled_exception.h"
-#include <algorithm>
 #include <array>
 #include <iostream>
 #include <openssl/evp.h>
 #include <print>
 #include <stdexcept>
-#include <string>
 
 struct AesCipherParams {
     static const size_t KEY_SIZE = 32;             // AES-256 key size
