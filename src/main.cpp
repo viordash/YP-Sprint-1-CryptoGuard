@@ -1,11 +1,11 @@
 #include "cmd_options.h"
 #include "crypto_guard_ctx.h"
 #include "handled_exception.h"
+#include <fstream>
 #include <iostream>
 #include <openssl/evp.h>
 #include <print>
 #include <stdexcept>
-
 
 int main(int argc, char *argv[]) {
     try {
@@ -15,8 +15,13 @@ int main(int argc, char *argv[]) {
         options.Parse(argc, argv);
 
         using COMMAND_TYPE = CryptoGuard::ProgramOptions::COMMAND_TYPE;
+
+        std::fstream inputFile(options.GetInputFile(), std::ios::in | std::ios::binary);
+        std::fstream outputFile(options.GetOutputFile(), std::ios::out | std::ios::binary);
+
         switch (options.GetCommand()) {
         case COMMAND_TYPE::ENCRYPT:
+            cryptoCtx.EncryptFile(inputFile, outputFile, options.GetPassword());
             std::print("File encoded successfully\n");
             break;
 
