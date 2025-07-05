@@ -26,11 +26,12 @@ int main(int argc, char *argv[]) {
             break;
 
         case COMMAND_TYPE::DECRYPT:
+            cryptoCtx.DecryptFile(inputFile, outputFile, options.GetPassword());
             std::print("File decoded successfully\n");
             break;
 
         case COMMAND_TYPE::CHECKSUM:
-            std::print("Checksum: {}\n", "CHECKSUM_NOT_IMPLEMENTED");
+            std::print("Checksum: {}\n", cryptoCtx.CalculateChecksum(inputFile));
             break;
 
         default:
