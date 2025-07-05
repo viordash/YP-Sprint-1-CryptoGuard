@@ -60,7 +60,9 @@ public:
         // Инициализируем cipher
         if (!EVP_CipherInit_ex(ctx.get(), params.cipher, nullptr, params.key.data(), params.iv.data(),
                                params.encrypt)) {
-            throw std::runtime_error("EVP_CipherInit_ex error:" + std::to_string(ERR_get_error()));
+            char err_buf[512];
+            ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+            throw std::runtime_error("EVP_CipherInit_ex error: " + std::string(err_buf));
         }
 
         std::vector<unsigned char> inBuf(16);
@@ -71,14 +73,20 @@ public:
         while (!inStream.eof()) {
             inStream.read(reinterpret_cast<char *>(inBuf.data()), inBuf.size());
             if (!EVP_CipherUpdate(ctx.get(), outBuf.data(), &outLen, inBuf.data(), inStream.gcount())) {
-                throw std::runtime_error("EVP_CipherUpdate error:" + std::to_string(ERR_get_error()));
+                char err_buf[512];
+                ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+                throw std::runtime_error("EVP_CipherUpdate error: " + std::string(err_buf));
             }
 
             outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
         }
 
         // Заканчиваем работу с cipher
-        EVP_CipherFinal_ex(ctx.get(), outBuf.data(), &outLen);
+        if (!EVP_CipherFinal_ex(ctx.get(), outBuf.data(), &outLen)) {
+            char err_buf[512];
+            ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+            throw std::runtime_error("EVP_CipherFinal_ex error: " + std::string(err_buf));
+        }
         if (outLen > 0) {
             outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
         }

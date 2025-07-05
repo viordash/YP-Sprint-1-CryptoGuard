@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 using ::CryptoGuard::CryptoGuardCtx;
+using ::testing::HasSubstr;
 
 TEST(CryptoGuardCtx, EncryptFile_throws_runtime_error_when_inputstream_eof) {
     CryptoGuardCtx testable;
@@ -126,23 +127,32 @@ TEST(CryptoGuardCtx, DecryptFile_throws_runtime_error_when_outputstream_not_good
     }
 }
 
-TEST(CryptoGuardCtx, DecryptFile_write_to_outputstream) {
+TEST(CryptoGuardCtx, DecryptFile_with_invalid_input_throws_runtime_error) {
     CryptoGuardCtx testable;
     std::stringstream inStream("01234567890123456789012345678901234567890123456789012345");
     std::stringstream outStream;
 
-    testable.DecryptFile(inStream, outStream, "12341234");
-    ASSERT_EQ(outStream.str().size(), 48);
+    try {
+        testable.DecryptFile(inStream, outStream, "12341234");
+        FAIL();
+    } catch (const std::exception &e) {
+        ASSERT_THAT(e.what(), HasSubstr("wrong final block length"));
+    }
 }
 
-TEST(CryptoGuardCtx, EncryptFile_and_DecryptFile_are_not_compatible_with_different_passwords) {
+TEST(CryptoGuardCtx, Different_passwords_throws_runtime_error) {
     CryptoGuardCtx testable;
     std::stringstream inEncryptStream("01234567890123456789");
     std::stringstream outEncryptStream;
     std::stringstream outDecryptStream;
 
-    testable.EncryptFile(inEncryptStream, outEncryptStream, "12341234");
-    testable.DecryptFile(outEncryptStream, outDecryptStream, "12341234+1");
+    try {
+        testable.EncryptFile(inEncryptStream, outEncryptStream, "12341234");
+        testable.DecryptFile(outEncryptStream, outDecryptStream, "12341234+1");
+        FAIL();
+    } catch (const std::exception &e) {
+        ASSERT_THAT(e.what(), HasSubstr("routines::bad decrypt"));
+    }
 
     ASSERT_EQ(outEncryptStream.str().size(), 32);
     ASSERT_EQ(outDecryptStream.str().size(), 16);
