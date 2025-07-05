@@ -1,4 +1,5 @@
 #include "cmd_options.h"
+#include "handled_exception.h"
 #include <iostream>
 #include <map>
 
@@ -18,7 +19,7 @@ ProgramOptions::ProgramOptions() : desc_("Allowed options") {
 
 ProgramOptions::~ProgramOptions() = default;
 
-bool ProgramOptions::Parse(int argc, char *argv[]) {
+void ProgramOptions::Parse(int argc, char *argv[]) {
 
     po::store(po::parse_command_line(argc, argv, desc_), vm_);
 
@@ -26,12 +27,12 @@ bool ProgramOptions::Parse(int argc, char *argv[]) {
         po::notify(vm_);
     } catch (const po::required_option &e) {
         if (vm_.count("help") > 0) {
-            std::cout << desc_ << "\n";
-            return false;
+            std::ostringstream oss;
+            oss << desc_;
+            throw HandledException(oss.str());
         }
         throw;
     }
-    return true;
 }
 
 std::istream &operator>>(std::istream &in, ProgramOptions::COMMAND_TYPE &command) {

@@ -1,5 +1,6 @@
 #include "cmd_options.h"
 #include "crypto_guard_ctx.h"
+#include "handled_exception.h"
 #include <algorithm>
 #include <array>
 #include <iostream>
@@ -36,11 +37,9 @@ AesCipherParams CreateChiperParamsFromPassword(std::string_view password) {
 int main(int argc, char *argv[]) {
     try {
         CryptoGuard::ProgramOptions options;
-        if (!options.Parse(argc, argv)) {
-            return 0;
-        }
-
         CryptoGuard::CryptoGuardCtx cryptoCtx;
+
+        options.Parse(argc, argv);
 
         using COMMAND_TYPE = CryptoGuard::ProgramOptions::COMMAND_TYPE;
         switch (options.GetCommand()) {
@@ -60,6 +59,9 @@ int main(int argc, char *argv[]) {
             throw std::runtime_error{"Unsupported command"};
         }
 
+    } catch (const HandledException &e) {
+        std::cout << e.what() << std::endl;
+        return 0;
     } catch (const std::exception &e) {
         std::print(std::cerr, "Error: {}\n", e.what());
         return 1;
