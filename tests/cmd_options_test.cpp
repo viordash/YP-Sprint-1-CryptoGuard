@@ -155,18 +155,6 @@ TEST(ProgramOptions, parse_command_options_CHECKSUM) {
     ASSERT_EQ(testable.GetCommand(), ProgramOptions::COMMAND_TYPE::CHECKSUM);
 }
 
-TEST(ProgramOptions, parse_short_command_options) {
-    ProgramOptions testable;
-
-    const char *argv[]{
-        nullptr, "-c", "encrypt", "-i", "input.txt", "-o", "output.txt", "-p", "42",
-    };
-    int argc = sizeof(argv) / sizeof(argv[0]);
-
-    testable.Parse(argc, const_cast<char **>(argv));
-    ASSERT_EQ(testable.GetCommand(), ProgramOptions::COMMAND_TYPE::ENCRYPT);
-}
-
 TEST(ProgramOptions, input_options_is_requried) {
     ProgramOptions testable;
 
@@ -181,30 +169,6 @@ TEST(ProgramOptions, input_options_is_requried) {
     } catch (const std::exception &e) {
         ASSERT_THAT(e.what(), AllOf(HasSubstr("--input"), HasSubstr("required"), HasSubstr("missing")));
     }
-}
-
-TEST(ProgramOptions, parse_input_options) {
-    ProgramOptions testable;
-
-    const char *argv[]{
-        nullptr, "-c", "checksum", "--input", "input.txt", "-o", "output.txt", "-p", "42",
-    };
-    int argc = sizeof(argv) / sizeof(argv[0]);
-
-    testable.Parse(argc, const_cast<char **>(argv));
-    ASSERT_STREQ(testable.GetInputFile().c_str(), "input.txt");
-}
-
-TEST(ProgramOptions, parse_short_input_options) {
-    ProgramOptions testable;
-
-    const char *argv[]{
-        nullptr, "-c", "checksum", "-i", "input.txt", "-o", "output.txt", "-p", "42",
-    };
-    int argc = sizeof(argv) / sizeof(argv[0]);
-
-    testable.Parse(argc, const_cast<char **>(argv));
-    ASSERT_STREQ(testable.GetInputFile().c_str(), "input.txt");
 }
 
 TEST(ProgramOptions, output_options_is_requried) {
@@ -223,30 +187,6 @@ TEST(ProgramOptions, output_options_is_requried) {
     }
 }
 
-TEST(ProgramOptions, parse_output_options) {
-    ProgramOptions testable;
-
-    const char *argv[]{
-        nullptr, "-c", "checksum", "-i", "input.txt", "--output", "output.txt", "-p", "42",
-    };
-    int argc = sizeof(argv) / sizeof(argv[0]);
-
-    testable.Parse(argc, const_cast<char **>(argv));
-    ASSERT_STREQ(testable.GetOutputFile().c_str(), "output.txt");
-}
-
-TEST(ProgramOptions, parse_short_output_options) {
-    ProgramOptions testable;
-
-    const char *argv[]{
-        nullptr, "-c", "checksum", "-i", "input.txt", "-o", "output.txt", "-p", "42",
-    };
-    int argc = sizeof(argv) / sizeof(argv[0]);
-
-    testable.Parse(argc, const_cast<char **>(argv));
-    ASSERT_STREQ(testable.GetOutputFile().c_str(), "output.txt");
-}
-
 TEST(ProgramOptions, password_options_is_requried) {
     ProgramOptions testable;
 
@@ -263,19 +203,37 @@ TEST(ProgramOptions, password_options_is_requried) {
     }
 }
 
-TEST(ProgramOptions, parse_password_options) {
+TEST(ProgramOptions, parse_options) {
     ProgramOptions testable;
 
     const char *argv[]{
-        nullptr, "-c", "checksum", "-i", "input.txt", "-o", "output.txt", "--password", "42",
+        nullptr, "--command", "checksum", "--input", "input.txt", "--output", "output.txt", "--password", "42",
     };
     int argc = sizeof(argv) / sizeof(argv[0]);
 
     testable.Parse(argc, const_cast<char **>(argv));
+    ASSERT_EQ(testable.GetCommand(), ProgramOptions::COMMAND_TYPE::CHECKSUM);
+    ASSERT_STREQ(testable.GetInputFile().c_str(), "input.txt");
+    ASSERT_STREQ(testable.GetOutputFile().c_str(), "output.txt");
     ASSERT_STREQ(testable.GetPassword().c_str(), "42");
 }
 
-TEST(ProgramOptions, parse_short_password_options) {
+TEST(ProgramOptions, parse_unordered_options) {
+    ProgramOptions testable;
+
+    const char *argv[]{
+        nullptr, "--output", "output.txt", "--input", "input.txt", "--command", "checksum", "--password", "42",
+    };
+    int argc = sizeof(argv) / sizeof(argv[0]);
+
+    testable.Parse(argc, const_cast<char **>(argv));
+    ASSERT_EQ(testable.GetCommand(), ProgramOptions::COMMAND_TYPE::CHECKSUM);
+    ASSERT_STREQ(testable.GetInputFile().c_str(), "input.txt");
+    ASSERT_STREQ(testable.GetOutputFile().c_str(), "output.txt");
+    ASSERT_STREQ(testable.GetPassword().c_str(), "42");
+}
+
+TEST(ProgramOptions, parse_short_options) {
     ProgramOptions testable;
 
     const char *argv[]{
@@ -284,5 +242,8 @@ TEST(ProgramOptions, parse_short_password_options) {
     int argc = sizeof(argv) / sizeof(argv[0]);
 
     testable.Parse(argc, const_cast<char **>(argv));
+    ASSERT_EQ(testable.GetCommand(), ProgramOptions::COMMAND_TYPE::CHECKSUM);
+    ASSERT_STREQ(testable.GetInputFile().c_str(), "input.txt");
+    ASSERT_STREQ(testable.GetOutputFile().c_str(), "output.txt");
     ASSERT_STREQ(testable.GetPassword().c_str(), "42");
 }
