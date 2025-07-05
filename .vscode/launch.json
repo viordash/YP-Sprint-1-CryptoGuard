@@ -13,7 +13,11 @@
                 "-i",
                 "input.txt",
                 "--command",
-                "checksum"
+                "checksum",
+                "--output",
+                "output.txt",
+                "-p",
+                "123234",
             ],
             "cwd": "${workspaceFolder}/build",
             "preLaunchTask": "GCC: Build Debug app",
