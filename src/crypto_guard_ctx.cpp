@@ -26,11 +26,9 @@ private:
         AesCipherParams params;
         constexpr std::array<unsigned char, 8> salt = {'1', '2', '3', '4', '5', '6', '7', '8'};
 
-        int result = EVP_BytesToKey(params.cipher, EVP_sha256(), salt.data(),
-                                    reinterpret_cast<const unsigned char *>(password.data()), password.size(), 1,
-                                    params.key.data(), params.iv.data());
-
-        if (result == 0) {
+        if (!EVP_BytesToKey(params.cipher, EVP_sha256(), salt.data(),
+                            reinterpret_cast<const unsigned char *>(password.data()), password.size(), 1,
+                            params.key.data(), params.iv.data())) {
             throw std::runtime_error{"Failed to create a key from password"};
         }
 
@@ -38,9 +36,6 @@ private:
     }
 
     void ValidateInputStream(std::iostream &stream) {
-        if (stream.eof()) {
-            throw std::runtime_error("input stream eof");
-        }
         if (!stream.good()) {
             throw std::runtime_error("input stream not good");
         }
@@ -48,7 +43,7 @@ private:
 
     void ValidateOuputStream(std::iostream &stream) {
         if (!stream.good()) {
-            throw std::runtime_error("ouput stream not good");
+            throw std::runtime_error("output stream not good");
         }
     }
 
