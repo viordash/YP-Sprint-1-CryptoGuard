@@ -22,19 +22,6 @@ private:
         std::array<unsigned char, IV_SIZE> iv;    // Initialization vector
     };
 
-    AesCipherParams CreateChiperParamsFromPassword(std::string_view password) {
-        AesCipherParams params;
-        constexpr std::array<unsigned char, 8> salt = {'1', '2', '3', '4', '5', '6', '7', '8'};
-
-        if (!EVP_BytesToKey(params.cipher, EVP_sha256(), salt.data(),
-                            reinterpret_cast<const unsigned char *>(password.data()), password.size(), 1,
-                            params.key.data(), params.iv.data())) {
-            throw std::runtime_error{"Failed to create a key from password"};
-        }
-
-        return params;
-    }
-
     void ValidateInputStream(std::iostream &stream) {
         if (!stream.good()) {
             throw std::runtime_error("input stream not good");
@@ -51,14 +38,24 @@ public:
     Impl() { OpenSSL_add_all_algorithms(); }
     ~Impl() { EVP_cleanup(); }
 
-    void EncryptFile(std::iostream &inStream, std::iostream &outStream, std::string_view password) {
+    AesCipherParams CreateChiperParamsFromPassword(std::string_view password) {
+        AesCipherParams params;
+        constexpr std::array<unsigned char, 8> salt = {'1', '2', '3', '4', '5', '6', '7', '8'};
+
+        if (!EVP_BytesToKey(params.cipher, EVP_sha256(), salt.data(),
+                            reinterpret_cast<const unsigned char *>(password.data()), password.size(), 1,
+                            params.key.data(), params.iv.data())) {
+            throw std::runtime_error{"Failed to create a key from password"};
+        }
+
+        return params;
+    }
+
+    void CipherFile(std::iostream &inStream, std::iostream &outStream, AesCipherParams &params) {
         ValidateInputStream(inStream);
         ValidateOuputStream(outStream);
 
         evp_ctx_ptr ctx{EVP_CIPHER_CTX_new()};
-
-        auto params = CreateChiperParamsFromPassword(password);
-        params.encrypt = 1;
 
         // Инициализируем cipher
         if (!EVP_CipherInit_ex(ctx.get(), params.cipher, nullptr, params.key.data(), params.iv.data(),
@@ -87,8 +84,6 @@ public:
         }
     }
 
-    void DecryptFile(std::iostream &inStream, std::iostream &outStream, std::string_view password) {}
-
     std::string CalculateChecksum(std::iostream &inStream) { return "NOT_IMPLEMENTED"; }
 };
 
@@ -96,11 +91,15 @@ CryptoGuardCtx::CryptoGuardCtx() : impl_(std::make_unique<Impl>()) {}
 CryptoGuardCtx::~CryptoGuardCtx() = default;
 
 void CryptoGuardCtx::EncryptFile(std::iostream &inStream, std::iostream &outStream, std::string_view password) {
-    impl_->EncryptFile(inStream, outStream, password);
+    auto params = impl_->CreateChiperParamsFromPassword(password);
+    params.encrypt = 1;
+    impl_->CipherFile(inStream, outStream, params);
 }
 
 void CryptoGuardCtx::DecryptFile(std::iostream &inStream, std::iostream &outStream, std::string_view password) {
-    impl_->DecryptFile(inStream, outStream, password);
+    auto params = impl_->CreateChiperParamsFromPassword(password);
+    params.encrypt = 0;
+    impl_->CipherFile(inStream, outStream, params);
 }
 
 std::string CryptoGuardCtx::CalculateChecksum(std::iostream &inStream) { return impl_->CalculateChecksum(inStream); }
