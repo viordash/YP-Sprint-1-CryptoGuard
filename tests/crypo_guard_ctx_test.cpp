@@ -69,3 +69,131 @@ TEST(CryptoGuardCtx, EncryptFile_write_to_outputstream) {
     testable.EncryptFile(inStream, outStream, "12341234");
     ASSERT_EQ(outStream.str().size(), 32);
 }
+
+TEST(CryptoGuardCtx, DecryptFile_throws_runtime_error_when_inputstream_eof) {
+    CryptoGuardCtx testable;
+    std::stringstream inStream;
+    std::stringstream outStream;
+
+    inStream.setstate(std::ios_base::eofbit);
+    try {
+        testable.DecryptFile(inStream, outStream, "12341234");
+        FAIL();
+    } catch (const std::exception &e) {
+        ASSERT_STREQ(e.what(), "input stream not good");
+    }
+}
+
+TEST(CryptoGuardCtx, DecryptFile_throws_runtime_error_when_inputstream_not_good) {
+    CryptoGuardCtx testable;
+    std::stringstream inStream;
+    std::stringstream outStream;
+
+    inStream.setstate(std::ios_base::failbit);
+    try {
+        testable.DecryptFile(inStream, outStream, "12341234");
+        FAIL();
+    } catch (const std::exception &e) {
+        ASSERT_STREQ(e.what(), "input stream not good");
+    }
+}
+
+TEST(CryptoGuardCtx, DecryptFile_throws_runtime_error_when_outputstream_eof) {
+    CryptoGuardCtx testable;
+    std::stringstream inStream;
+    std::stringstream outStream;
+
+    outStream.setstate(std::ios_base::eofbit);
+    try {
+        testable.DecryptFile(inStream, outStream, "12341234");
+        FAIL();
+    } catch (const std::exception &e) {
+        ASSERT_STREQ(e.what(), "output stream not good");
+    }
+}
+
+TEST(CryptoGuardCtx, DecryptFile_throws_runtime_error_when_outputstream_not_good) {
+    CryptoGuardCtx testable;
+    std::stringstream inStream;
+    std::stringstream outStream;
+
+    outStream.setstate(std::ios_base::failbit);
+    try {
+        testable.DecryptFile(inStream, outStream, "12341234");
+        FAIL();
+    } catch (const std::exception &e) {
+        ASSERT_STREQ(e.what(), "output stream not good");
+    }
+}
+
+TEST(CryptoGuardCtx, DecryptFile_write_to_outputstream) {
+    CryptoGuardCtx testable;
+    std::stringstream inStream("01234567890123456789012345678901234567890123456789012345");
+    std::stringstream outStream;
+
+    testable.DecryptFile(inStream, outStream, "12341234");
+    ASSERT_EQ(outStream.str().size(), 48);
+}
+
+TEST(CryptoGuardCtx, EncryptFile_and_DecryptFile_are_not_compatible_with_different_passwords) {
+    CryptoGuardCtx testable;
+    std::stringstream inEncryptStream("01234567890123456789");
+    std::stringstream outEncryptStream;
+    std::stringstream outDecryptStream;
+
+    testable.EncryptFile(inEncryptStream, outEncryptStream, "12341234");
+    testable.DecryptFile(outEncryptStream, outDecryptStream, "12341234+1");
+
+    ASSERT_EQ(outEncryptStream.str().size(), 32);
+    ASSERT_EQ(outDecryptStream.str().size(), 16);
+    ASSERT_NE("01234567890123456789", outDecryptStream.str());
+}
+
+std::string CreateFixedString(size_t size) {
+    const std::string base = "0123456789"
+                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                             "abcdefghijklmnopqrstuvwxyz"
+                             "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+
+    if (size == 0)
+        return "";
+
+    std::string input;
+    input.reserve(size);
+
+    for (size_t copied = 0; copied < size;) {
+        size_t to_copy = std::min(base.size(), size - copied);
+        input.append(base, 0, to_copy);
+        copied += to_copy;
+    }
+
+    return input;
+}
+
+TEST(CryptoGuardCtx, EncryptFile_and_DecryptFile_are_compatible_fixed_data) {
+    const std::vector<size_t> inputSizes = {0,   1,   15,  16,  17,  31,  32,  33,  63,  64,  65,
+                                            127, 128, 129, 255, 256, 257, 511, 512, 513, 999, 1000};
+
+    const std::vector<size_t> passwordSizes = {0, 1, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 99, 100};
+
+    CryptoGuardCtx testable;
+    for (size_t inputSize : inputSizes) {
+        const std::string input_data = CreateFixedString(inputSize);
+        std::stringstream inEncryptStream(input_data);
+
+        for (size_t passwordSize : passwordSizes) {
+            std::string password = CreateFixedString(passwordSize);
+            std::stringstream outEncryptStream;
+            std::stringstream outDecryptStream;
+
+            inEncryptStream.clear();
+            inEncryptStream.seekg(0);
+            testable.EncryptFile(inEncryptStream, outEncryptStream, password);
+
+            outEncryptStream.seekg(0);
+            testable.DecryptFile(outEncryptStream, outDecryptStream, password);
+
+            ASSERT_EQ(input_data, outDecryptStream.str());
+        }
+    }
+}
