@@ -1,8 +1,10 @@
 #include "crypto_guard_ctx.h"
 #include <array>
+#include <iomanip>
 #include <iostream>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <sstream>
 #include <vector>
 
 namespace CryptoGuard {
@@ -11,6 +13,8 @@ class CryptoGuardCtx::Impl {
 private:
     using evp_ctx_ptr =
         std::unique_ptr<EVP_CIPHER_CTX, decltype([](EVP_CIPHER_CTX *ctx) { EVP_CIPHER_CTX_free(ctx); })>;
+
+    using evp_md_ctx_ptr = std::unique_ptr<EVP_MD_CTX, decltype([](EVP_MD_CTX *ctx) { EVP_MD_CTX_free(ctx); })>;
 
     struct AesCipherParams {
         static const size_t KEY_SIZE = 32;             // AES-256 key size
@@ -62,7 +66,7 @@ public:
                                params.encrypt)) {
             char err_buf[512];
             ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-            throw std::runtime_error("EVP_CipherInit_ex error: " + std::string(err_buf));
+            throw std::runtime_error("EVP_CipherInit_ex: " + std::string(err_buf));
         }
 
         std::vector<unsigned char> inBuf(16);
@@ -75,7 +79,7 @@ public:
             if (!EVP_CipherUpdate(ctx.get(), outBuf.data(), &outLen, inBuf.data(), inStream.gcount())) {
                 char err_buf[512];
                 ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-                throw std::runtime_error("EVP_CipherUpdate error: " + std::string(err_buf));
+                throw std::runtime_error("EVP_CipherUpdate: " + std::string(err_buf));
             }
 
             outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
@@ -85,14 +89,63 @@ public:
         if (!EVP_CipherFinal_ex(ctx.get(), outBuf.data(), &outLen)) {
             char err_buf[512];
             ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-            throw std::runtime_error("EVP_CipherFinal_ex error: " + std::string(err_buf));
+            throw std::runtime_error("EVP_CipherFinal_ex: " + std::string(err_buf));
         }
         if (outLen > 0) {
             outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
         }
     }
 
-    std::string CalculateChecksum(std::iostream &inStream) { return "NOT_IMPLEMENTED"; }
+    std::string CalculateChecksum(std::iostream &inStream) {
+        ValidateInputStream(inStream);
+
+        evp_md_ctx_ptr mdctx{EVP_MD_CTX_new()};
+
+        const EVP_MD *md = EVP_sha256();
+        if (md == nullptr) {
+            char err_buf[512];
+            ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+            throw std::runtime_error("EVP_sha256: " + std::string(err_buf));
+        }
+
+        if (!EVP_DigestInit_ex(mdctx.get(), md, nullptr)) {
+            char err_buf[512];
+            ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+            throw std::runtime_error("EVP_DigestInit_ex: " + std::string(err_buf));
+        }
+
+        std::array<unsigned char, 4096> buffer;
+        unsigned int md_len = 0;
+        std::array<unsigned char, EVP_MAX_MD_SIZE> md_value;
+
+        while (!inStream.eof()) {
+            inStream.read(reinterpret_cast<char *>(buffer.data()), buffer.size());
+            const auto bytes_read = inStream.gcount();
+
+            if (bytes_read > 0) {
+                if (!EVP_DigestUpdate(mdctx.get(), buffer.data(), bytes_read)) {
+                    char err_buf[512];
+                    ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+                    throw std::runtime_error("EVP_DigestInit_ex: " + std::string(err_buf));
+                }
+            }
+        }
+
+        if (!EVP_DigestFinal_ex(mdctx.get(), md_value.data(), &md_len)) {
+            char err_buf[512];
+            ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+            throw std::runtime_error("EVP_DigestInit_ex: " + std::string(err_buf));
+        }
+
+        std::ostringstream hex_stream;
+        hex_stream << std::hex << std::setfill('0');
+
+        for (unsigned int i = 0; i < md_len; i++) {
+            hex_stream << std::setw(2) << static_cast<unsigned>(md_value[i]);
+        }
+
+        return hex_stream.str();
+    }
 };
 
 CryptoGuardCtx::CryptoGuardCtx() : impl_(std::make_unique<Impl>()) {}
