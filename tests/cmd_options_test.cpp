@@ -1,7 +1,6 @@
 #include "cmd_options.h"
 #include "handled_exception.h"
 #include "gmock/gmock.h"
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 using ::CryptoGuard::ProgramOptions;
