@@ -13,29 +13,12 @@
                 "-i",
                 "input.txt",
                 "--command",
-                "checksum",
-                "--output",
-                "output.txt",
-                "-p",
-                "123234",
+                "checksum"
             ],
             "cwd": "${workspaceFolder}/build",
-            "preLaunchTask": "build",
-            "initCommands": [
-                "settings set target.disable-aslr false"
-            ]
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Launch Tests",
-            "program": "${workspaceFolder}/build/CryptoGuard_tests",
-            "args": [],
-            "cwd": "${workspaceFolder}/build",
-            "preLaunchTask": "build",
-            "initCommands": [
-                "settings set target.disable-aslr false"
-            ]
+            "preLaunchTask": "GCC: Build Debug app",
+            "initCommands": ["settings set target.disable-aslr false"]
         }
+
     ]
 }
