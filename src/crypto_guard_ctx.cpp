@@ -61,7 +61,7 @@ public:
         return params;
     }
 
-    void CipherFile(std::iostream &inStream, std::iostream &outStream, AesCipherParams &params) {
+    void CipherFile(std::iostream &inStream, std::iostream &outStream, const AesCipherParams &params) {
         ValidateInputStream(inStream);
         ValidateOuputStream(outStream);
 
