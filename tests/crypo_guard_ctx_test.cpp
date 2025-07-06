@@ -231,3 +231,16 @@ TEST(CryptoGuardCtx, ChecksumCalculation_for_empty_data) {
     auto checksum = testable.CalculateChecksum(inStream);
     EXPECT_EQ(checksum, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
 }
+
+TEST(CryptoGuardCtx, ChecksumCalculation_is_independent_of_previous_call_EncryptFile_or_DecryptFile) {
+    CryptoGuardCtx testable;
+
+    std::stringstream inEncryptStream("01234567890123456789");
+    std::stringstream outEncryptStream;
+    std::stringstream outDecryptStream;
+    testable.EncryptFile(inEncryptStream, outEncryptStream, "12341234");
+    testable.DecryptFile(outEncryptStream, outDecryptStream, "12341234");
+
+    auto checksum = testable.CalculateChecksum(outDecryptStream);
+    EXPECT_EQ(checksum, "4e76ad8354461437c04ef9b9b242540b6406d782ff2c3fb28afdab5b423f88fe");
+}
