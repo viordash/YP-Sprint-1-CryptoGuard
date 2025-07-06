@@ -7,6 +7,8 @@
 #include <print>
 #include <stdexcept>
 
+using COMMAND_TYPE = CryptoGuard::ProgramOptions::COMMAND_TYPE;
+
 int main(int argc, char *argv[]) {
     try {
         CryptoGuard::ProgramOptions options;
@@ -14,21 +16,22 @@ int main(int argc, char *argv[]) {
 
         options.Parse(argc, argv);
 
-        using COMMAND_TYPE = CryptoGuard::ProgramOptions::COMMAND_TYPE;
-
         std::fstream inputFile(options.GetInputFile(), std::ios::in | std::ios::binary);
-        std::fstream outputFile(options.GetOutputFile(), std::ios::out | std::ios::binary);
 
         switch (options.GetCommand()) {
-        case COMMAND_TYPE::ENCRYPT:
+        case COMMAND_TYPE::ENCRYPT: {
+            std::fstream outputFile(options.GetOutputFile(), std::ios::out | std::ios::binary);
             cryptoCtx.EncryptFile(inputFile, outputFile, options.GetPassword());
             std::print("File encoded successfully\n");
             break;
+        }
 
-        case COMMAND_TYPE::DECRYPT:
+        case COMMAND_TYPE::DECRYPT: {
+            std::fstream outputFile(options.GetOutputFile(), std::ios::out | std::ios::binary);
             cryptoCtx.DecryptFile(inputFile, outputFile, options.GetPassword());
             std::print("File decoded successfully\n");
             break;
+        }
 
         case COMMAND_TYPE::CHECKSUM:
             std::print("Checksum: {}\n", cryptoCtx.CalculateChecksum(inputFile));
