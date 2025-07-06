@@ -6,7 +6,9 @@
 namespace CryptoGuard {
 namespace po = boost::program_options;
 
-ProgramOptions::ProgramOptions() : desc_("Allowed options") {
+ProgramOptions::ProgramOptions()
+    : desc_("Allowed options", po::options_description::m_default_line_length * 2,
+            po::options_description::m_default_line_length) {
     desc_.add_options()                                                                         //
         ("help,h", "список доступных опций")                                                    //
         ("command,c", po::value<ProgramOptions::COMMAND_TYPE>(&command_)->required(),           //
