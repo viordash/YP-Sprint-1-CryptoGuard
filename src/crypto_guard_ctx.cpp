@@ -72,7 +72,7 @@ public:
             ThrowOpenSSLError("EVP_CipherInit_ex");
         }
 
-        std::vector<unsigned char> inBuf(16);
+        std::vector<unsigned char> inBuf(4096);
         std::vector<unsigned char> outBuf(inBuf.size() + EVP_MAX_BLOCK_LENGTH);
         int outLen;
 
