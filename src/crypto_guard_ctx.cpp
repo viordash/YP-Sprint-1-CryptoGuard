@@ -113,12 +113,8 @@ public:
 
         while (!inStream.eof()) {
             inStream.read(reinterpret_cast<char *>(buffer.data()), buffer.size());
-            const auto bytes_read = inStream.gcount();
-
-            if (bytes_read > 0) {
-                if (!EVP_DigestUpdate(mdctx.get(), buffer.data(), bytes_read)) {
-                    ThrowOpenSSLError("EVP_DigestUpdate");
-                }
+            if (!EVP_DigestUpdate(mdctx.get(), buffer.data(), inStream.gcount())) {
+                ThrowOpenSSLError("EVP_DigestUpdate");
             }
         }
 
