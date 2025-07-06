@@ -38,6 +38,12 @@ private:
         }
     }
 
+    void ThrowOpenSSLError(std::string prefix) {
+        char err_buf[512];
+        ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+        throw std::runtime_error(prefix + ": " + std::string(err_buf));
+    }
+
 public:
     Impl() { OpenSSL_add_all_algorithms(); }
     ~Impl() { EVP_cleanup(); }
@@ -49,7 +55,7 @@ public:
         if (!EVP_BytesToKey(params.cipher, EVP_sha256(), salt.data(),
                             reinterpret_cast<const unsigned char *>(password.data()), password.size(), 1,
                             params.key.data(), params.iv.data())) {
-            throw std::runtime_error{"Failed to create a key from password"};
+            ThrowOpenSSLError("EVP_BytesToKey");
         }
 
         return params;
@@ -61,35 +67,26 @@ public:
 
         evp_ctx_ptr ctx{EVP_CIPHER_CTX_new()};
 
-        // Инициализируем cipher
         if (!EVP_CipherInit_ex(ctx.get(), params.cipher, nullptr, params.key.data(), params.iv.data(),
                                params.encrypt)) {
-            char err_buf[512];
-            ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-            throw std::runtime_error("EVP_CipherInit_ex: " + std::string(err_buf));
+            ThrowOpenSSLError("EVP_CipherInit_ex");
         }
 
         std::vector<unsigned char> inBuf(16);
         std::vector<unsigned char> outBuf(inBuf.size() + EVP_MAX_BLOCK_LENGTH);
         int outLen;
 
-        // Обрабатываем пачками символов
         while (!inStream.eof()) {
             inStream.read(reinterpret_cast<char *>(inBuf.data()), inBuf.size());
             if (!EVP_CipherUpdate(ctx.get(), outBuf.data(), &outLen, inBuf.data(), inStream.gcount())) {
-                char err_buf[512];
-                ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-                throw std::runtime_error("EVP_CipherUpdate: " + std::string(err_buf));
+                ThrowOpenSSLError("EVP_CipherUpdate");
             }
 
             outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
         }
 
-        // Заканчиваем работу с cipher
         if (!EVP_CipherFinal_ex(ctx.get(), outBuf.data(), &outLen)) {
-            char err_buf[512];
-            ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-            throw std::runtime_error("EVP_CipherFinal_ex: " + std::string(err_buf));
+            ThrowOpenSSLError("EVP_CipherFinal_ex");
         }
         if (outLen > 0) {
             outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
@@ -103,15 +100,11 @@ public:
 
         const EVP_MD *md = EVP_sha256();
         if (md == nullptr) {
-            char err_buf[512];
-            ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-            throw std::runtime_error("EVP_sha256: " + std::string(err_buf));
+            ThrowOpenSSLError("EVP_sha256");
         }
 
         if (!EVP_DigestInit_ex(mdctx.get(), md, nullptr)) {
-            char err_buf[512];
-            ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-            throw std::runtime_error("EVP_DigestInit_ex: " + std::string(err_buf));
+            ThrowOpenSSLError("EVP_DigestInit_ex");
         }
 
         std::array<unsigned char, 4096> buffer;
@@ -124,17 +117,13 @@ public:
 
             if (bytes_read > 0) {
                 if (!EVP_DigestUpdate(mdctx.get(), buffer.data(), bytes_read)) {
-                    char err_buf[512];
-                    ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-                    throw std::runtime_error("EVP_DigestInit_ex: " + std::string(err_buf));
+                    ThrowOpenSSLError("EVP_DigestUpdate");
                 }
             }
         }
 
         if (!EVP_DigestFinal_ex(mdctx.get(), md_value.data(), &md_len)) {
-            char err_buf[512];
-            ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-            throw std::runtime_error("EVP_DigestInit_ex: " + std::string(err_buf));
+            ThrowOpenSSLError("EVP_DigestFinal_ex");
         }
 
         std::ostringstream hex_stream;
