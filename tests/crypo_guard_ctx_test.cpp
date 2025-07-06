@@ -159,11 +159,11 @@ TEST(CryptoGuardCtx, Different_passwords_throws_runtime_error) {
     ASSERT_NE("01234567890123456789", outDecryptStream.str());
 }
 
-std::string CreateFixedString(size_t size) {
-    const std::string base = "0123456789"
-                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                             "abcdefghijklmnopqrstuvwxyz"
-                             "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+static std::string CreateFixedString(size_t size) {
+    static const std::string base = "0123456789"
+                                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                    "abcdefghijklmnopqrstuvwxyz"
+                                    "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 
     if (size == 0)
         return "";
@@ -218,7 +218,8 @@ TEST(CryptoGuardCtx, ChecksumCalculation) {
 
 TEST(CryptoGuardCtx, ChecksumCalculation_for_long_string) {
     CryptoGuardCtx testable;
-    std::stringstream inStream(CreateFixedString(1000));
+    std::string input_data = CreateFixedString(1000);
+    std::stringstream inStream(std::move(input_data));
 
     auto checksum = testable.CalculateChecksum(inStream);
     EXPECT_EQ(checksum, "856fc5d1201b902510c46d5cc5f3005a117d7d3b856ac3c4dbbc3370b1b99937");
