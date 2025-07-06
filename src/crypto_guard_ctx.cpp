@@ -76,8 +76,7 @@ public:
         std::vector<unsigned char> outBuf(inBuf.size() + EVP_MAX_BLOCK_LENGTH);
         int outLen;
 
-        while (!inStream.eof()) {
-            inStream.read(reinterpret_cast<char *>(inBuf.data()), inBuf.size());
+        while (inStream.read(reinterpret_cast<char *>(inBuf.data()), inBuf.size()) || inStream.gcount() > 0) {
             if (!EVP_CipherUpdate(ctx.get(), outBuf.data(), &outLen, inBuf.data(), inStream.gcount())) {
                 ThrowOpenSSLError("EVP_CipherUpdate");
             }
@@ -111,8 +110,7 @@ public:
         unsigned int md_len = 0;
         std::array<unsigned char, EVP_MAX_MD_SIZE> md_value;
 
-        while (!inStream.eof()) {
-            inStream.read(reinterpret_cast<char *>(buffer.data()), buffer.size());
+        while (inStream.read(reinterpret_cast<char *>(buffer.data()), buffer.size()) || inStream.gcount() > 0) {
             if (!EVP_DigestUpdate(mdctx.get(), buffer.data(), inStream.gcount())) {
                 ThrowOpenSSLError("EVP_DigestUpdate");
             }

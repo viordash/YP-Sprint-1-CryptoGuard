@@ -182,7 +182,7 @@ std::string CreateFixedString(size_t size) {
 
 TEST(CryptoGuardCtx, EncryptFile_and_DecryptFile_are_compatible_fixed_data) {
     const std::vector<size_t> inputSizes = {0,   1,   15,  16,  17,  31,  32,  33,  63,  64,  65,
-                                            127, 128, 129, 255, 256, 257, 511, 512, 513, 999, 1000};
+                                            127, 128, 129, 255, 256, 257, 511, 512, 513, 999, 1000, 4095, 4096, 4097};
 
     const std::vector<size_t> passwordSizes = {0, 1, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 99, 100};
 
